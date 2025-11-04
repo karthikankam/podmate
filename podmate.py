@@ -9,7 +9,7 @@ from gtts import gTTS
 from groq import Groq
 from langgraph.prebuilt import create_react_agent
 from langchain_groq import ChatGroq
-from langchain.text_splitters import RecursiveCharacterTextSplitter
+from langchain_text_splitters import RecursiveCharacterTextSplitter
 from langchain.chains.summarize import load_summarize_chain
 from langchain_community.document_loaders import PyPDFLoader
 from langchain_community.tools import ArxivQueryRun, WikipediaQueryRun, DuckDuckGoSearchRun
@@ -521,5 +521,6 @@ if st.session_state.logged_in:
     show_main_app()
 else:
     show_auth_page()
+
 
 
