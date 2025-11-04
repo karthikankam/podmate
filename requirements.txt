@@ -1,0 +1,13 @@
+streamlit
+python-dotenv
+bcrypt
+groq
+langchain
+langchain-groq
+langchain-community
+gtts
+PyPDF2
+python-magic
+duckduckgo-search
+wikipedia
+arxiv
