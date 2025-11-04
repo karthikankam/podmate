@@ -7,7 +7,7 @@ import bcrypt
 from dotenv import load_dotenv
 from gtts import gTTS
 from groq import Groq
-from langchain.agents import initialize_agent, AgentType
+from langgraph.prebuilt import create_react_agent
 from langchain_groq import ChatGroq
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 from langchain.chains.summarize import load_summarize_chain
@@ -481,17 +481,15 @@ def show_main_app():
             st.session_state.mes.append({"role": "user", "content": prompt})
             st.chat_message("user").write(prompt)
 
-            agent = initialize_agent(
-                llm=llm,
-                tools=tools,
-                agent=AgentType.ZERO_SHOT_REACT_DESCRIPTION,
-                handle_parsing_errors=True
+            agent = create_react_agent(
+            model=llm,
+            tools=tools
             )
 
             with st.spinner("🔍 Researching across tools... please wait"):
                 try:
-                    response = agent.invoke({"input": prompt})
-                    output_text = response.get("output", str(response))
+                    response = agent.invoke({"messages": [("user", prompt)]})
+                    output_text = response["messages"][-1].content
                 except Exception as e:
                     output_text = f"Sorry, I encountered an error: {str(e)}"
 
@@ -523,3 +521,4 @@ if st.session_state.logged_in:
     show_main_app()
 else:
     show_auth_page()
+
