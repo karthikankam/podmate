@@ -94,3 +94,10 @@ PodMate is a full-stack web application that converts textbooks, notes, and docu
 ### Local Setup
 
 1. **Clone the repository**
+
+2. **Create virtual environment**
+
+3. **Install dependencies**
+
+4. **Run the application**
+5. **Open in browser** https://podmate-app.streamlit.app/
