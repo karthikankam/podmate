@@ -15,12 +15,17 @@ from langchain_community.document_loaders import PyPDFLoader
 from langchain_community.tools import ArxivQueryRun, WikipediaQueryRun, DuckDuckGoSearchRun
 from langchain_community.utilities import ArxivAPIWrapper, WikipediaAPIWrapper
 import magic
+import os
+from dotenv import load_dotenv
 
 # -------------------------------
 # Config
 # -------------------------------
 DB_FILE = "podmate.db"
+groq_api_key = os.getenv("GROQ_API_KEY")
 
+if not groq_api_key:
+    st.error("⚠️ Missing GROQ_API_KEY! Please check environment settings.")
 # -------------------------------
 # Database Setup
 # -------------------------------
@@ -521,6 +526,7 @@ if st.session_state.logged_in:
     show_main_app()
 else:
     show_auth_page()
+
 
 
 
