@@ -4,6 +4,8 @@ bcrypt
 groq
 gtts
 PyPDF2
+pypdf
+
 python-magic
 duckduckgo-search
 wikipedia==1.4.0
@@ -14,3 +16,4 @@ langchain-core==0.3.17
 langchain-groq==0.2.1
 langchain-text-splitters==0.3.2
 langgraph==0.2.45
+
