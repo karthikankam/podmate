@@ -14,7 +14,7 @@ from langchain.chains.summarize import load_summarize_chain
 from langchain_community.document_loaders import PyPDFLoader
 from langchain_community.tools import ArxivQueryRun, WikipediaQueryRun, DuckDuckGoSearchRun
 from langchain_community.utilities import ArxivAPIWrapper, WikipediaAPIWrapper
-import magic
+import puremagic
 import os
 from dotenv import load_dotenv
 
@@ -149,6 +149,30 @@ def get_user_podcasts(user_id):
         }
         for row in results
     ]
+
+# -------------------------------
+# File type detection (pure-Python, no libmagic system dependency)
+# -------------------------------
+def detect_mime_type(file_bytes, filename):
+    """
+    Detect MIME type using puremagic (content sniffing), with an
+    extension-based fallback if puremagic can't confidently identify it.
+    """
+    try:
+        matches = puremagic.magic_string(file_bytes)
+        if matches:
+            # matches are sorted by confidence, take the best guess
+            return matches[0].mime_type
+    except Exception:
+        pass
+
+    # Fallback: infer from extension
+    ext = os.path.splitext(filename)[1].lower()
+    if ext == ".pdf":
+        return "application/pdf"
+    if ext == ".txt":
+        return "text/plain"
+    return "application/octet-stream"
 
 # -------------------------------
 # API Key Validation
@@ -367,9 +391,10 @@ def show_main_app():
         uploaded_file = st.file_uploader("📄 Upload a PDF or TXT file", type=["pdf", "txt"])
 
         if uploaded_file:
-            mime = magic.from_buffer(uploaded_file.read(2048), mime=True)
+            file_head = uploaded_file.read(2048)
             uploaded_file.seek(0)
-            if not (mime in ["application/pdf", "text/plain"]):
+            mime = detect_mime_type(file_head, uploaded_file.name)
+            if mime not in ["application/pdf", "text/plain"]:
                 st.error("❌ Invalid file type. Please upload a valid PDF or TXT file.")
                 st.stop()
 
@@ -526,7 +551,3 @@ if st.session_state.logged_in:
     show_main_app()
 else:
     show_auth_page()
-
-
-
-
