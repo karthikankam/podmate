@@ -6,7 +6,7 @@ gtts
 PyPDF2
 pypdf
 
-python-magic
+puremagic
 duckduckgo-search
 wikipedia==1.4.0
 arxiv==2.1.3
