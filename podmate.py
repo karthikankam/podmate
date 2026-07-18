@@ -1,5 +1,6 @@
 import streamlit as st
 import os
+import sys
 import tempfile
 import sqlite3
 from datetime import datetime
@@ -17,6 +18,15 @@ from langchain_community.utilities import ArxivAPIWrapper, WikipediaAPIWrapper
 import puremagic
 import os
 from dotenv import load_dotenv
+
+# Force UTF-8 stdout/stderr so non-ASCII content (accented names, smart
+# quotes, dashes, bullets — common in uploaded PDFs/resumes) doesn't crash
+# print()/logging calls on containers that default to ASCII encoding.
+try:
+    sys.stdout.reconfigure(encoding="utf-8", errors="replace")
+    sys.stderr.reconfigure(encoding="utf-8", errors="replace")
+except Exception:
+    pass
 
 # -------------------------------
 # Config
@@ -423,6 +433,10 @@ def show_main_app():
                                 text_content = f.read()
                             docs = [{"page_content": text_content}]
 
+                        # Sanitize: strip characters that can't round-trip through
+                        # UTF-8 cleanly (rare PDF extraction artifacts, control chars)
+                        text_content = text_content.encode("utf-8", errors="ignore").decode("utf-8")
+
                         # Split text into chunks
                         splitter = RecursiveCharacterTextSplitter(chunk_size=1500, chunk_overlap=200)
                         
@@ -434,9 +448,9 @@ def show_main_app():
                         word_count = len(text_content.split())
 
                         if word_count < 5000:
-                            summarize_chain = load_summarize_chain(llm, chain_type="stuff", verbose=True)
+                            summarize_chain = load_summarize_chain(llm, chain_type="stuff", verbose=False)
                         else:
-                            summarize_chain = load_summarize_chain(llm, chain_type="map_reduce", verbose=True)
+                            summarize_chain = load_summarize_chain(llm, chain_type="map_reduce", verbose=False)
 
                         summary = summarize_chain.run(chunks)
 
