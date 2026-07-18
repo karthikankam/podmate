@@ -185,8 +185,44 @@ def detect_mime_type(file_bytes, filename):
     return "application/octet-stream"
 
 # -------------------------------
-# API Key Validation
+# Text sanitization (defends against ASCII-codec crashes downstream)
 # -------------------------------
+import unicodedata
+
+def sanitize_text(text):
+    """
+    Normalize and strip text to plain ASCII. Some downstream libraries
+    (TTS clients, certain logging/HTTP layers) choke on characters like
+    em dashes, smart quotes, or bullets that are common in PDFs/resumes
+    and in LLM-generated text. This converts common typographic
+    punctuation to ASCII equivalents, then drops anything left over
+    that still isn't ASCII, so those crashes can't happen.
+    """
+    if not text:
+        return text
+
+    replacements = {
+        "\u2014": "-",   # em dash —
+        "\u2013": "-",   # en dash –
+        "\u2018": "'",   # left single quote '
+        "\u2019": "'",   # right single quote '
+        "\u201c": '"',   # left double quote "
+        "\u201d": '"',   # right double quote "
+        "\u2026": "...", # ellipsis …
+        "\u2022": "-",   # bullet •
+        "\u00a0": " ",   # non-breaking space
+    }
+    for uni_char, ascii_eq in replacements.items():
+        text = text.replace(uni_char, ascii_eq)
+
+    # Decompose accented characters (e.g. é -> e) where possible
+    text = unicodedata.normalize("NFKD", text)
+
+    # Final safety net: drop anything that still isn't plain ASCII
+    text = text.encode("ascii", errors="ignore").decode("ascii")
+    return text
+
+
 def validate_api_key_callback():
     """Callback function to validate API key automatically"""
     api_key = st.session_state.api_key_input
@@ -433,17 +469,17 @@ def show_main_app():
                                 text_content = f.read()
                             docs = [{"page_content": text_content}]
 
-                        # Sanitize: strip characters that can't round-trip through
-                        # UTF-8 cleanly (rare PDF extraction artifacts, control chars)
-                        text_content = text_content.encode("utf-8", errors="ignore").decode("utf-8")
+                        # Sanitize: convert typographic punctuation (em dashes,
+                        # smart quotes, etc. common in PDFs/resumes) and strip
+                        # any other non-ASCII characters that could crash
+                        # downstream libraries.
+                        text_content = sanitize_text(text_content)
 
-                        # Split text into chunks
+                        # Split text into chunks (always split the sanitized
+                        # text_content, so PDFs and TXT files are treated
+                        # consistently and no unsanitized text slips through)
                         splitter = RecursiveCharacterTextSplitter(chunk_size=1500, chunk_overlap=200)
-                        
-                        if uploaded_file.name.endswith(".pdf"):
-                            chunks = splitter.create_documents([d.page_content for d in docs])
-                        else:
-                            chunks = splitter.create_documents([text_content])
+                        chunks = splitter.create_documents([text_content])
 
                         word_count = len(text_content.split())
 
@@ -453,6 +489,7 @@ def show_main_app():
                             summarize_chain = load_summarize_chain(llm, chain_type="map_reduce", verbose=False)
 
                         summary = summarize_chain.run(chunks)
+                        summary = sanitize_text(summary)
 
                         st.subheader("🧾 Summary:")
                         st.write(summary)
