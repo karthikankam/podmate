@@ -1,6 +1,7 @@
 import streamlit as st
 import os
 import sys
+import traceback
 import tempfile
 import sqlite3
 from datetime import datetime
@@ -533,6 +534,8 @@ def show_main_app():
 
                     except Exception as e:
                         st.error(f"❌ Error generating podcast: {str(e)}")
+                        with st.expander("🔧 Debug details (temporary)"):
+                            st.code(traceback.format_exc())
                     finally:
                         # Clean up temp file
                         if os.path.exists(file_path):
